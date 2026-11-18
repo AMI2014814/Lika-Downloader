@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
+<title>Lika Downloader</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== TOP APP BAR ===== -->
+<div class="app-bar">
+  <div class="app-bar-left">
+    <div class="logo" onclick="scrollToTop()">
+      <div class="logo-icon">▶</div>
+      <div class="logo-text">Lika</div>
+    </div>
+  </div>
+  <div class="app-bar-right">
+    <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Tema">🌙</button>
+    <button class="icon-btn" onclick="openProfileSheet()" title="Perfil">
+      <span id="appAvatar">👤</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== BUSCA MOBILE ===== -->
+<div class="mobile-search">
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input type="text" id="quickSearch" placeholder="Cole um link ou pesquise...">
+  </div>
+  <button class="mic-btn" onclick="scrollToTop()" title="Topo">🎤</button>
+</div>
+
+<!-- ===== CHIPS DE PLATAFORMA ===== -->
+<div class="chips-row">
+  <button class="chip active" data-platform="auto" onclick="selectChip(this, 'platform')">🌐 Todas</button>
+  <button class="chip" data-platform="youtube" onclick="selectChip(this, 'platform')">▶️ YouTube</button>
+  <button class="chip" data-platform="facebook" onclick="selectChip(this, 'platform')">📘 Facebook</button>
+  <button class="chip" data-platform="instagram" onclick="selectChip(this, 'platform')">📸 Instagram</button>
+  <button class="chip" data-platform="tiktok" onclick="selectChip(this, 'platform')">🎵 TikTok</button>
+</div>
+
+<main>
+  <!-- ===== SEÇÃO: DOWNLOAD ===== -->
+  <section class="section active" id="sec-download">
+    <div class="hero">
+      <h1>Baixe <span>vídeos e músicas</span></h1>
+      <p>Grátis, rápido e sem cadastro</p>
+    </div>
+
+    <div class="input-card">
+      <div class="input-label">📥 Cole o link</div>
+      <div class="url-field">
+        <span class="icon">🔗</span>
+        <input type="text" id="urlInput" placeholder="https://youtube.com/watch?v=...">
+      </div>
+
+      <button class="btn-main" id="searchBtn" onclick="searchMedia()">
+        <span id="btnText">Analisar link</span>
+      </button>
+
+      <div class="input-label" style="margin-top:16px;">🎯 Formato</div>
+      <div class="format-row">
+        <div class="format-chip active" data-type="video" onclick="selectFormat(this)">
+          <span class="icon">🎬</span>
+          <span class="name">Vídeo</span>
+          <span class="desc">MP4 HD</span>
+        </div>
+        <div class="format-chip" data-type="audio" onclick="selectFormat(this)">
+          <span class="icon">🎵</span>
+          <span class="name">Áudio</span>
+          <span class="desc">MP3 320k</span>
+        </div>
+        <div class="format-chip" data-type="playlist" onclick="selectFormat(this)">
+          <span class="icon">📋</span>
+          <span class="name">Playlist</span>
+          <span class="desc">Completa</span>
+        </div>
+      </div>
+
+      <div class="adv-toggle" onclick="toggleAdvanced()">
+        <span id="arrow">▶</span> ⚙️ Opções avançadas
+      </div>
+      <div class="adv-panel" id="advancedPanel">
+        <div class="slider-group">
+          <label>Velocidade <span id="speedVal">1.0x</span></label>
+          <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" oninput="updateSpeed(this.value)">
+        </div>
+        <div class="slider-group">
+          <label>Tom (semitons) <span id="pitchVal">0</span></label>
+          <input type="range" id="pitch" min="-12" max="12" value="0" oninput="updatePitch(this.value)">
+        </div>
+        <div class="slider-group">
+          <label>Qualidade <span id="qualityVal">320 kbps</span></label>
+          <input type="range" id="quality" min="64" max="320" step="64" value="320" oninput="updateQuality(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="results" id="resultsSection">
+      <div class="result-header">📊 Resultado da análise</div>
+      <div id="resultsList"></div>
+    </div>
+  </section>
+
+  <!-- ===== SEÇÃO: HISTÓRICO ===== -->
+  <section class="section" id="sec-history">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 12px 8px;">
+      <div style="font-size:20px;font-weight:800;">📊 Histórico</div>
+      <button class="chip" onclick="clearHistory()" style="background:var(--accent-soft);color:var(--accent);">🗑️ Limpar</button>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- ===== SEÇÃO: PUBLICAR ===== -->
+  <section class="section" id="sec-publish">
+    <div style="padding:16px 12px 8px;">
+      <div style="font-size:20px;font-weight:800;">📤 Publicar vídeo</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Compartilhe com a comunidade</div>
+    </div>
+
+    <div class="upload-zone-m" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📁</div>
+      <p>Toque para enviar um vídeo</p>
+      <small>MP4, MOV, WEBM • Máx 500MB</small>
+    </div>
+    <input type="file" id="fileInput" accept="video/*" style="display:none;" onchange="handleFileSelect(event)">
+
+    <div id="publishForm" style="display:none;margin-top:16px;">
+      <div class="form-field">
+        <label>Título</label>
+        <input type="text" id="pubTitle" placeholder="Título do vídeo">
+      </div>
+      <div class="form-field">
+        <label>Descrição</label>
+        <textarea id="pubDesc" placeholder="Descrição..."></textarea>
+      </div>
+      <div class="form-field">
+        <label>Visibilidade</label>
+        <select id="pubVisibility">
+          <option value="public">🌐 Público</option>
+          <option value="unlisted">🔗 Não listado</option>
+          <option value="private">🔒 Privado</option>
+        </select>
+      </div>
+      <div id="uploadPreview" style="margin:0 12px;"></div>
+      <div style="padding:0 12px 20px;">
+        <button class="btn-main" onclick="publishVideo()" id="pubBtn">
+          🚀 Publicar agora
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SEÇÃO: PERFIL ===== -->
+  <section class="section" id="sec-profile">
+    <div class="profile-header-m">
+      <div class="profile-avatar-m" id="profileAvatar">A</div>
+      <div style="flex:1;min-width:0;">
+        <div class="profile-name-m" id="profileName">Usuário</div>
+        <div class="profile-email-m" id="profileEmail">email@exemplo.com</div>
+      </div>
+    </div>
+
+    <div class="stats-row-m">
+      <div class="stat-box-m">
+        <div class="stat-icon-m">📥</div>
+        <div class="stat-value-m" id="statDownloads">0</div>
+        <div class="stat-label-m">Downloads</div>
+      </div>
+      <div class="stat-box-m">
+        <div class="stat-icon-m">📤</div>
+        <div class="stat-value-m" id="statPublished">0</div>
+        <div class="stat-label-m">Publicados</div>
+      </div>
+      <div class="stat-box-m">
+        <div class="stat-icon-m">🎬</div>
+        <div class="stat-value-m" id="statEdits">0</div>
+        <div class="stat-label-m">Edições</div>
+      </div>
+    </div>
+
+    <div class="menu-list-m" style="margin-top:8px;">
+      <div class="menu-item-m" onclick="goToEditor()">
+        <div class="menu-icon-m">✂️</div>
+        <div class="menu-label-m">Editor de vídeo</div>
+        <div class="menu-arrow-m">›</div>
+      </div>
+      <div class="menu-item-m" onclick="showSection('history')">
+        <div class="menu-icon-m">📊</div>
+        <div class="menu-label-m">Meu histórico</div>
+        <div class="menu-arrow-m">›</div>
+      </div>
+      <div class="menu-item-m" onclick="openThemeSheet()">
+        <div class="menu-icon-m">🎨</div>
+        <div class="menu-label-m">Aparência</div>
+        <div class="menu-arrow-m">›</div>
+      </div>
+      <div class="menu-item-m" onclick="openApiSheet()">
+        <div class="menu-icon-m">🔧</div>
+        <div class="menu-label-m">Configurar API</div>
+        <div class="menu-arrow-m">›</div>
+      </div>
+      <div class="menu-item-m" onclick="logout()">
+        <div class="menu-icon-m" style="background:rgba(198,40,40,0.15);color:var(--error);">🚪</div>
+        <div class="menu-label-m" style="color:var(--error);">Sair da conta</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-section="download" onclick="showSection('download')">
+    <span class="icon">🏠</span>
+    <span class="label">Início</span>
+  </button>
+  <button class="nav-item" data-section="history" onclick="showSection('history')">
+    <span class="icon">📊</span>
+    <span class="label">Histórico</span>
+  </button>
+  <button class="nav-item nav-center" data-section="publish" onclick="showSection('publish')">
+    <span class="icon">＋</span>
+    <span class="label">Publicar</span>
+  </button>
+  <button class="nav-item" data-section="editor" onclick="goToEditor()">
+    <span class="icon">✂️</span>
+    <span class="label">Editor</span>
+  </button>
+  <button class="nav-item" data-section="profile" onclick="showSection('profile')">
+    <span class="icon">👤</span>
+    <span class="label">Perfil</span>
+  </button>
+</nav>
+
+<!-- ===== MODAL SHEET ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeSheet(event)">
+  <div class="modal-sheet" id="modalSheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ===== CONFIG =====
+  const API_URL = localStorage.getItem('lika_api') || 'http://localhost:3000';
+  let currentType = 'video';
+  let currentPlatform = 'auto';
+  let currentUser = null;
+  let selectedFile = null;
+  let activeSection = 'download';
+
+  // ===== INIT =====
+  function init() {
+    const userStr = localStorage.getItem('lika_user');
+    if (!userStr) { window.location.href = 'login.html'; return; }
+    currentUser = JSON.parse(userStr);
+
+    document.getElementById('appAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('profileAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('profileName').textContent = currentUser.name;
+    document.getElementById('profileEmail').textContent = currentUser.email;
+
+    // Tema
+    const theme = localStorage.getItem('lika_theme') || 'dark';
+    applyTheme(theme);
+
+    renderHistory();
+    renderStats();
+
+    // Enter na busca
+    document.getElementById('urlInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') searchMedia();
+    });
+    document.getElementById('quickSearch').addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        document.getElementById('urlInput').value = e.target.value;
+        showSection('download');
+        searchMedia();
+      }
+    });
+
+    // Drop zone
+    const uz = document.getElementById('uploadZone');
+    ['dragover', 'dragenter'].forEach(ev => uz.addEventListener(ev, e => { e.preventDefault(); uz.style.transform = 'scale(1.02)'; }));
+    ['dragleave', 'drop'].forEach(ev => uz.addEventListener(ev, e => { e.preventDefault(); uz.style.transform = ''; }));
+    uz.addEventListener('drop', e => {
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('video/')) {
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        handleFileSelect({ target: { files: [f] } });
+      }
+    });
+  }
+
+  // ===== TEMA =====
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('lika_theme', theme);
+    document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+    document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0f0f0f' : '#ffffff';
+  }
+
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  }
+
+  // ===== NAVEGAÇÃO =====
+  function showSection(name) {
+    if (name === 'editor') { window.location.href = 'editor.html'; return; }
+    activeSection = name;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      n.classList.toggle('active', n.dataset.section === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (name === 'history') renderHistory();
+    if (name === 'profile') renderStats();
+  }
+
+  function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function goToEditor() { window.location.href = 'editor.html'; }
+
+  // ===== CHIPS =====
+  function selectChip(el, group) {
+    el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    if (group === 'platform') currentPlatform = el.dataset.platform;
+  }
+
+  function selectFormat(el) {
+    document.querySelectorAll('.format-chip').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    currentType = el.dataset.type;
+  }
+
+  // ===== ADVANCED =====
+  function toggleAdvanced() {
+    const p = document.getElementById('advancedPanel');
+    const a = document.getElementById('arrow');
+    p.classList.toggle('show');
+    a.textContent = p.classList.contains('show') ? '▼' : '▶';
+  }
+  function updateSpeed(v) { document.getElementById('speedVal').textContent = v + 'x'; }
+  function updatePitch(v) { document.getElementById('pitchVal').textContent = (v > 0 ? '+' : '') + v; }
+  function updateQuality(v) { document.getElementById('qualityVal').textContent = v + ' kbps'; }
+
+  // ===== BUSCAR =====
+  async function searchMedia() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return showToast('❌ Cole um link válido!', 'error');
+    if (!url.startsWith('http')) return showToast('❌ Link inválido', 'error');
+
+    const btn = document.getElementById('searchBtn');
+    const txt = document.getElementById('btnText');
+    btn.disabled = true;
+    txt.innerHTML = '<span class="spinner"></span> Analisando...';
+
+    try {
+      const res = await fetch(`${API_URL}/api/info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Falha');
+      const data = await res.json();
+      showResults(data, url);
+      showToast('✅ Análise concluída!', 'success');
+    } catch (err) {
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      txt.textContent = 'Analisar link';
+    }
+  }
+
+  function showResults(data, url) {
+    const section = document.getElementById('resultsSection');
+    const list = document.getElementById('resultsList');
+    const items = Array.isArray(data.entries) ? data.entries : [data];
+
+    list.innerHTML = items.map(item => {
+      const title = item.title || 'Sem título';
+      const duration = item.duration ? formatDuration(item.duration) : 'N/A';
+      const thumb = item.thumbnail || '';
+      const uploader = item.uploader || 'Desconhecido';
+      const itemUrl = item.url || url;
+      const escTitle = escapeHtml(title).replace(/'/g, '&#39;');
+
+      return `
+        <div class="video-card-m">
+          ${thumb
+            ? `<img class="video-thumb-m" src="${thumb}" onerror="this.style.display='none'">`
+            : `<div class="video-thumb-m" style="display:flex;align-items:center;justify-content:center;font-size:32px;">🎬</div>`}
+          <div class="video-body-m">
+            <div class="video-title-m">${escapeHtml(title)}</div>
+            <div class="video-meta-m">${escapeHtml(uploader)} • ${duration}</div>
+            <div class="action-row-m">
+              <button class="action-btn-m primary" onclick="startDownload('${itemUrl}', 'video', '${escTitle}', this)">
+                <span class="icon">🎬</span>
+                <span class="label">MP4</span>
+              </button>
+              <button class="action-btn-m" onclick="startDownload('${itemUrl}', 'audio', '${escTitle}', this)">
+                <span class="icon">🎵</span>
+                <span class="label">MP3</span>
+              </button>
+              <button class="action-btn-m" onclick="editVideo('${itemUrl}', '${escTitle}')">
+                <span class="icon">✂️</span>
+                <span class="label">Editar</span>
+              </button>
+              <button class="action-btn-m" onclick="shareMedia('${itemUrl}', '${escTitle}')">
+                <span class="icon">📤</span>
+                <span class="label">Compartilhar</span>
+              </button>
+            </div>
+            <div class="progress-m"><div class="progress-bar-m"></div></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    section.classList.add('show');
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ===== DOWNLOAD =====
+  async function startDownload(url, format, title, btn) {
+    const card = btn.closest('.video-card-m');
+    const progress = card.querySelector('.progress-m');
+    const bar = card.querySelector('.progress-bar-m');
+
+    btn.disabled = true;
+    progress.classList.add('show');
+
+    let pct = 0;
+    const fake = setInterval(() => {
+      pct = Math.min(pct + 8, 90);
+      bar.style.width = pct + '%';
+    }, 300);
+
+    try {
+      const params = new URLSearchParams({
+        url, format,
+        quality: document.getElementById('quality').value,
+        speed: document.getElementById('speed').value,
+        pitch: document.getElementById('pitch').value
+      });
+
+      const a = document.createElement('a');
+      a.href = `${API_URL}/api/download?${params}`;
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      clearInterval(fake);
+      bar.style.width = '100%';
+
+      addToHistory({
+        title, format, platform: currentPlatform, url,
+        date: new Date().toISOString(),
+        sizeMB: format === 'audio' ? 5 : 25
+      });
+
+      showToast('✅ Download iniciado!', 'success');
+      setTimeout(() => {
+        progress.classList.remove('show');
+        bar.style.width = '0%';
+        btn.disabled = false;
+      }, 2000);
+
+    } catch (err) {
+      clearInterval(fake);
+      progress.classList.remove('show');
+      btn.disabled = false;
+      showToast('❌ ' + err.message, 'error');
+    }
+  }
+
+  // ===== HISTÓRICO =====
+  function addToHistory(item) {
+    const h = JSON.parse(localStorage.getItem('lika_history') || '[]');
+    h.unshift({ ...item, id: Date.now() });
+    localStorage.setItem('lika_history', JSON.stringify(h.slice(0, 100)));
+    renderStats();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const h = JSON.parse(localStorage.getItem('lika_history') || '[]');
+
+    if (h.length === 0) {
+      list.innerHTML = `
+        <div class="empty-m">
+          <div class="icon">📭</div>
+          <div class="title">Nenhum download ainda</div>
+          <div class="sub">Baixe algo para aparecer aqui</div>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = h.map(item => `
+      <div class="history-item-m">
+        <div class="history-icon-m">${item.format === 'audio' ? '🎵' : '🎬'}</div>
+        <div class="history-info-m">
+          <div class="history-title-m">${escapeHtml(item.title)}</div>
+          <div class="history-meta-m">${new Date(item.date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })} • ${item.format.toUpperCase()}</div>
+        </div>
+        <button class="history-del-m" onclick="removeFromHistory(${item.id})">🗑️</button>
+      </div>
+    `).join('');
+  }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f0f">
+<title>Editor - Lika</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-bar">
+  <div class="app-bar-left">
+    <button class="icon-btn" onclick="location.href='index.html'">←</button>
+    <div class="logo">
+      <div class="logo-icon">✂️</div>
+      <div class="logo-text">Editor</div>
+    </div>
+  </div>
+  <div class="app-bar-right">
+    <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+  </div>
+</div>
+
+<main>
+  <!-- Preview -->
+  <div class="editor-preview-m" id="videoPreview">
+    <div style="color:var(--text-muted);text-align:center;">
+      <div style="font-size:48px;opacity:0.4;">🎬</div>
+      <div style="font-size:13px;margin-top:8px;">Nenhum vídeo</div>
+    </div>
+  </div>
+
+  <!-- Carregar -->
+  <div style="padding:0 12px 16px;">
+    <button class="btn-main" onclick="document.getElementById('videoFile').click()">
+      📁 Carregar vídeo
+    </button>
+    <input type="file" id="videoFile" accept="video/*" style="display:none;" onchange="loadVideo(event)">
+    <div class="url-field" style="margin-top:10px;">
+      <span class="icon">🔗</span>
+      <input type="text" id="videoUrl" placeholder="Ou cole uma URL...">
+    </div>
+    <button class="btn-main" onclick="loadFromUrl()" style="margin-top:8px;background:var(--bg-tertiary);color:var(--text-primary);box-shadow:none;">
+      Carregar da URL
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div style="padding:0 12px 8px;">
+    <div class="input-label">🎨 Filtros</div>
+  </div>
+  <div class="filter-scroll">
+    <button class="filter-chip-m active" data-filter="none" onclick="selectFilter(this, 'none')"><span class="icon">🚫</span><span class="name">Original</span></button>
+    <button class="filter-chip-m" data-filter="grayscale" onclick="selectFilter(this, 'grayscale')"><span class="icon">⚫</span><span class="name">P&B</span></button>
+    <button class="filter-chip-m" data-filter="sepia" onclick="selectFilter(this, 'sepia')"><span class="icon">🟤</span><span class="name">Sépia</span></button>
+    <button class="filter-chip-m" data-filter="blur" onclick="selectFilter(this, 'blur')"><span class="icon">💨</span><span class="name">Blur</span></button>
+    <button class="filter-chip-m" data-filter="brightness" onclick="selectFilter(this, 'brightness')"><span class="icon">💡</span><span class="name">Brilho</span></button>
+    <button class="filter-chip-m" data-filter="contrast" onclick="selectFilter(this, 'contrast')"><span class="icon">🎭</span><span class="name">Contraste</span></button>
+    <button class="filter-chip-m" data-filter="invert" onclick="selectFilter(this, 'invert')"><span class="icon">🔄</span><span class="name">Inverter</span></button>
+    <button class="filter-chip-m" data-filter="saturate" onclick="selectFilter(this, 'saturate')"><span class="icon">🌈</span><span class="name">Saturar</span></button>
+  </div>
+
+  <!-- Ajustes -->
+  <div class="input-card">
+    <div class="input-label">🎚️ Ajustes</div>
+    <div class="slider-group">
+      <label>Velocidade <span id="speedVal">1.0x</span></label>
+      <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" oninput="updateSpeed(this.value)">
+    </div>
+    <div class="slider-group">
+      <label>Volume <span id="volumeVal">100%</span></label>
+      <input type="range" id="volume" min="0" max="200" value="100" oninput="updateVolume(this.value)">
+    </div>
+    <div class="slider-group">
+      <label>Tom <span id="pitchVal">0</span></label>
+      <input type="range" id="pitch" min="-12" max="12" value="0" oninput="updatePitch(this.value)">
+    </div>
+    <div class="slider-group">
+      <label>Rotação <span id="rotateVal">0°</span></label>
+      <input type="range" id="rotate" min="0" max="360" value="0" oninput="updateRotate(this.value)">
+    </div>
+  </div>
+
+  <!-- Trim -->
+  <div class="input-card">
+    <div class="input-label">⏱️ Corte (trim)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Início (s)</div>
+        <input type="number" class="time-input" id="trimStart" value="0" min="0" step="0.1" style="width:100%;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Fim (s)</div>
+        <input type="number" class="time-input" id="trimEnd" value="10" min="0" step="0.1" style="width:100%;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);">
+      </div>
+    </div>
+  </div>
+
+  <!-- Formato + exportar -->
+  <div class="input-card">
+    <div class="input-label">📐 Formato de saída</div>
+    <select id="outputFormat" style="width:100%;padding:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:14px;">
+      <option value="mp4">MP4 (Vídeo)</option>
+      <option value="webm">WEBM</option>
+      <option value="mp3">MP3 (Áudio)</option>
+      <option value="gif">GIF</option>
+    </select>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button onclick="resetEditor()" style="flex:1;padding:14px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;">
+        🔄 Resetar
+      </button>
+      <button class="btn-main" onclick="exportVideo()" style="flex:2;">
+        💾 Exportar
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- Loading -->
+<div style="position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:16px;" id="loadingOverlay">
+  <span class="spinner" style="width:40px;height:40px;border-width:4px;"></span>
+  <div style="color:#fff;font-weight:600;" id="loadingText">Processando...</div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="nav-item" onclick="location.href='index.html'">
+    <span class="icon">🏠</span>
+    <span class="label">Início</span>
+  </button>
+  <button class="nav-item" onclick="location.href='index.html'">
+    <span class="icon">📊</span>
+    <span class="label">Histórico</span>
+  </button>
+  <button class="nav-item" onclick="location.href='index.html'">
+    <span class="icon">＋</span>
+    <span class="label">Publicar</span>
+  </button>
+  <button class="nav-item active">
+    <span class="icon">✂️</span>
+    <span class="label">Editor</span>
+  </button>
+  <button class="nav-item" onclick="location.href='index.html'">
+    <span class="icon">👤</span>
+    <span class="label">Perfil</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_URL = localStorage.getItem('lika_api') || 'http://localhost:3000';
+  let currentVideo = null;
+  let currentFilter = 'none';
+  let videoLoaded = false;
+
+  // Tema
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('lika_theme', t);
+    document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    const c = document.documentElement.getAttribute('data-theme');
+    applyTheme(c === 'dark' ? 'light' : 'dark');
+  }
+  applyTheme(localStorage.getItem('lika_theme') || 'dark');
+
+  // Params URL
+  const params = new URLSearchParams(location.search);
+  if (params.get('url')) {
+    document.getElementById('videoUrl').value = params.get('url');
+  }
+
+  function loadVideo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    currentVideo = { file, url: URL.createObjectURL(file) };
+    renderVideo(currentVideo.url);
+    showToast('✅ Vídeo carregado!', 'success');
+  }
+
+  function loadFromUrl() {
+    const url = document.getElementById('videoUrl').value.trim();
+    if (!url) return showToast('❌ Cole uma URL', 'error');
+    renderVideo(url);
+    currentVideo = { url, isRemote: true };
+  }
+
+  function renderVideo(src) {
+    document.getElementById('videoPreview').innerHTML =
+      `<video id="previewVideo" controls crossorigin="anonymous"><source src="${src}"></video>`;
+    videoLoaded = true;
+    const v = document.getElementById('previewVideo');
+    v.addEventListener('loadedmetadata', () => {
+      document.getElementById('trimEnd').value = v.duration.toFixed(1);
+    });
+    applyCurrentFilter();
+  }
+
+  function selectFilter(el, filter) {
+    document.querySelectorAll('.filter-chip-m').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentFilter = filter;
+    applyCurrentFilter();
+  }
+
+  function applyCurrentFilter() {
+    const v = document.getElementById('previewVideo');
+    if (!v) return;
+    const f = {
+      none: '', grayscale: 'grayscale(100%)', sepia: 'sepia(100%)',
+      blur: 'blur(3px)', brightness: 'brightness(1.5)', contrast: 'contrast(1.5)',
+      invert: 'invert(100%)', saturate: 'saturate(200%)'
+    };
+    v.style.filter = f[currentFilter] || '';
+  }
+
+  function updateSpeed(v) { document.getElementById('speedVal').textContent = v + 'x'; const el = document.getElementById('previewVideo'); if (el) el.playbackRate = parseFloat(v); }
+  function updateVolume(v) { document.getElementById('volumeVal').textContent = v + '%'; const el = document.getElementById('previewVideo'); if (el) el.volume = Math.min(1, v / 100); }
+  function updatePitch(v) { document.getElementById('pitchVal').textContent = (v > 0 ? '+' : '') + v; }
+  function updateRotate(v) { document.getElementById('rotateVal').textContent = v + '°'; const el = document.getElementById('previewVideo'); if (el) el.style.transform = `rotate(${v}deg)`; }
+
+  async function exportVideo() {
+    if (!videoLoaded) return showToast('❌ Carregue um vídeo', 'error');
+    if (!currentVideo.file) return showToast('⚠️ Baixe o vídeo primeiro', 'error');
+
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.display = 'flex';
+
+    try {
+      const fd = new FormData();
+      fd.append('video', currentVideo.file);
+      fd.append('filter', currentFilter);
+      fd.append('speed', document.getElementById('speed').value);
+      fd.append('pitch', document.getElementById('pitch').value);
+      fd.append('rotate', document.getElementById('rotate').value);
+      fd.append('volume', document.getElementById('volume').value);
+      fd.append('trimStart', document.getElementById('trimStart').value);
+      fd.append('trimEnd', document.getElementById('trimEnd').value);
+      fd.append('format', document.getElementById('outputFormat').value);
+
+      const res = await fetch(`${API_URL}/api/edit`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Falha ao processar');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const e = JSON.parse(localStorage.getItem('lika_edits') || '[]');
+      e.unshift({ name: currentVideo.file.name, format: document.getElementById('outputFormat').value, date: new Date().toISOString() });
+      localStorage.setItem('lika_edits', JSON.stringify(e));
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lika_${Date.now()}.${document.getElementById('outputFormat').value}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      showToast('✅ Exportado!', 'success');
+    } catch (err) {
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      overlay.style.display = 'none';
+    }
+  }
+
+  function resetEditor() {
+    if (!confirm('Resetar?')) return;
+    currentFilter = 'none';
+    document.querySelectorAll('.filter-chip-m').forEach((b, i) => b.classList.toggle('active', i === 0));
+    ['speed', 'volume', 'pitch', 'rotate'].forEach(id => {
+      const def = id === 'volume' ? 100 : 1;
+      document.getElementById(id).value = id === 'volume' ? 100 : (id === 'speed' ? 1 : 0);
+    });
+    document.getElementById('speedVal').textContent = '1.0x';
+    document.getElementById('volumeVal').textContent = '100%';
+    document.getElementById('pitchVal').textContent = '0';
+    document.getElementById('rotateVal').textContent = '0°';
+    applyCurrentFilter();
+    const v = document.getElementById('previewVideo');
+    if (v) { v.style.transform = ''; v.playbackRate = 1; v.volume = 1; }
+    showToast('🔄 Resetado', '');
+  }
+
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f0f">
+<title>Entrar - Lika Downloader</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body style="padding-bottom:0;">
+
+<button class="icon-btn" style="position:fixed;top:16px;right:16px;z-index:10;background:var(--bg-secondary);" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">▶ Lika<span>Downloader</span></div>
+    <div class="login-sub">Baixe, edite e publique vídeos</div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('login', this)">Entrar</button>
+      <button class="tab-btn" onclick="switchTab('register', this)">Criar conta</button>
+    </div>
+
+    <div id="errorMsg" style="display:none;background:rgba(198,40,40,0.15);border:1px solid var(--error);color:var(--error);padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;"></div>
+
+    <div id="loginForm">
+      <div class="form-field" style="margin:0 0 12px;">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="seu@email.com">
+      </div>
+      <div class="form-field" style="margin:0 0 16px;">
+        <label>Senha</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn-main" onclick="handleLogin()" id="loginBtn">Entrar</button>
+    </div>
+
+    <div id="registerForm" style="display:none;">
+      <div class="form-field" style="margin:0 0 12px;">
+        <label>Nome</label>
+        <input type="text" id="regName" placeholder="Adrian">
+      </div>
+      <div class="form-field" style="margin:0 0 12px;">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="seu@email.com">
+      </div>
+      <div class="form-field" style="margin:0 0 16px;">
+        <label>Senha (mín. 6)</label>
+        <input type="password" id="regPassword" placeholder="••••••••">
+      </div>
+      <button class="btn-main" onclick="handleRegister()" id="regBtn">Criar conta</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text-muted);font-size:12px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      ou
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <button onclick="continueAsGuest()" style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);color:var(--text-primary);border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;">
+      👤 Continuar como visitante
+    </button>
+  </div>
+</div>
+
+<script>
+  const API_URL = localStorage.getItem('lika_api') || 'http://localhost:3000';
+
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('lika_theme', t);
+    document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    const c = document.documentElement.getAttribute('data-theme');
+    applyTheme(c === 'dark' ? 'light' : 'dark');
+  }
+  applyTheme(localStorage.getItem('lika_theme') || 'dark');
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    hideError();
+  }
+
+  function showError(m) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = m;
+    el.style.display = 'block';
+  }
+  function hideError() { document.getElementById('errorMsg').style.display = 'none'; }
+
+  async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return showError('Preencha tudo');
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'Entrando...';
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha');
+      localStorage.setItem('lika_user', JSON.stringify(data.user));
+      localStorage.setItem('lika_token', data.token);
+      location.href = 'index.html';
+    } catch (err) {
+      showError(err.message);
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    }
+  }
+
+  async function handleRegister() {
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!name || !email || !password) return showError('Preencha tudo');
+    if (password.length < 6) return showError('Senha muito curta');
+
+    const btn = document.getElementById('regBtn');
+    btn.disabled = true;
+    btn.textContent = 'Criando...';
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha');
+      localStorage.setItem('lika_user', JSON.stringify(data.user));
+      localStorage.setItem('lika_token', data.token);
+      location.href = 'index.html';
+    } catch (err) {
+      showError(err.message);
+      btn.disabled = false;
+      btn.textContent = 'Criar conta';
+    }
+  }
+
+  function continueAsGuest() {
+    localStorage.setItem('lika_user', JSON.stringify({
+      id: 'guest', name: 'Visitante', email: 'guest@local', isGuest: true
+    }));
+    location.href = 'index.html';
+  }
+</script>
+</body>
+</html>
+ 
